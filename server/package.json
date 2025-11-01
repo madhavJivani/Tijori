@@ -6,17 +6,24 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "seed": "pnpm run db-up && node prisma/index.js && pnpm run db-down",
+    "db-up": "docker compose up -d",
+    "db-down": "docker compose down",
+    "db-logs": "docker compose logs postgres"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.14.0",
   "dependencies": {
+    "@prisma/client": "^6.18.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "prisma": "^6.18.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
