@@ -34,7 +34,12 @@ export const createFile = async (req, res) => {
         // now upload this file to S3 and get the filePath
         // TODO : Modify this to actually upload file to S3, for now just simulating
         // Use multer and aws-sdk to upload file to S3
-        const filePath = await uploadFileToS3();
+        console.log('req.files:', req.files);
+        const fileLocalPath = req.files.document ? req.files.document[0].path : null;
+        if(!fileLocalPath){
+            return res.status(409).json({ message: "File is required but no local path is available" });
+        }
+        const filePath = await uploadFileToS3(fileLocalPath,fileName); // TODO : HEre unlink the local file after upload in finally block so it does not stay on server anyhow
 
         const newFile = await prismaClient.file.create({
             data: {
@@ -46,9 +51,6 @@ export const createFile = async (req, res) => {
                 }
             }
         });
-
-        console.log('New file created:', newFile);
-
 
         return res.status(201).json({ message: 'File created successfully', newFile });
     } catch (error) {

@@ -7,7 +7,6 @@ import collectionRoutes from './routes/collection.route.js';
 import fileRoutes from './routes/file.routes.js';
 
 const app = express();
-const PORT = process.env.PORT || 8000;
 
 app.use(cors({
     origin: process.env.CORS_ORIGIN,

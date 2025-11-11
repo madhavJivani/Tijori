@@ -2,7 +2,7 @@ import pkg from '../generated/prisma/index.js';
 const { PrismaClient } = pkg;
 
 // Create a single instance of PrismaClient to be reused across the application
-let prisma;
+let prisma = null;
 
 // Function to get the Prisma client instance
 const getPrismaClient = () => {
@@ -32,6 +32,7 @@ const disconnectDB = async () => {
   try {
     if (prisma) {
       await prisma.$disconnect();
+      prisma = null;
       console.log('✅ Disconnected from database');
     }
   } catch (error) {
