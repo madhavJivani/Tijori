@@ -89,7 +89,7 @@ export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1h';
 export const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     maxAge: 60 * 60 * 1000, // 1 hour
 };
 
