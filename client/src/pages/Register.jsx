@@ -1,241 +1,300 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import api from "../api/api";
-import { FaEnvelope, FaLock, FaUser } from "react-icons/fa";
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaCheck, FaTimes } from 'react-icons/fa';
+import { useUserStore } from '../store';
 
-export default function Register() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [passwordStrength, setPasswordStrength] = useState("");
+const Register = () => {
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordMatch, setPasswordMatch] = useState(true);
+  
+  const { register, login, loading, error, isAuthenticated, clearError } = useUserStore();
   const navigate = useNavigate();
 
-  // 🔒 Password strength checker
-  const checkPasswordStrength = (pwd) => {
-    if (!pwd) return setPasswordStrength("");
-    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
-    const mediumRegex = /^((?=.*[a-z])(?=.*[A-Z])(?=.*\d)).{6,}$/;
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
 
-    if (strongRegex.test(pwd)) setPasswordStrength("strong");
-    else if (mediumRegex.test(pwd)) setPasswordStrength("medium");
-    else setPasswordStrength("weak");
+  // Clear error when component mounts
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  // Check password match
+  useEffect(() => {
+    if (formData.password && formData.confirmPassword) {
+      setPasswordMatch(formData.password === formData.confirmPassword);
+    } else {
+      setPasswordMatch(true);
+    }
+  }, [formData.password, formData.confirmPassword]);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
-
-    if (!name || !email || !password || !confirmPassword) {
-      setError("Please fill in all fields");
-      setLoading(false);
+    clearError();
+    
+    if (!formData.username || !formData.email || !formData.password || !formData.confirmPassword) {
       return;
     }
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
+    if (!passwordMatch) {
       return;
     }
 
     try {
-      await api.post("/auth/register", { name, email, password });
-      setSuccess("Account created successfully! Redirecting...");
-      setTimeout(() => navigate("/login"), 2000);
+      // First register the user
+      await register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password
+      });
+      
+      // Then automatically log them in for smoother experience
+      await login({
+        email: formData.email,
+        password: formData.password
+      });
+      
+      // Navigate to home page
+      navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      // Error is handled by the store
     }
-
-    setLoading(false);
   };
 
+  // Password strength checker
+  const getPasswordStrength = (password) => {
+    if (!password) return null;
+    
+    const checks = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /\d/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+    };
+    
+    const score = Object.values(checks).filter(Boolean).length;
+    
+    if (score < 3) return { strength: 'weak', color: 'text-red-500' };
+    if (score < 5) return { strength: 'medium', color: 'text-yellow-500' };
+    return { strength: 'strong', color: 'text-green-500' };
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password);
+
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-blue-100 to-blue-300">
-      <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center text-blue-700 mb-2">
-          Create Account
-        </h2>
-        <p className="text-center text-gray-500 mb-6">
-          Sign up to start using your Personal File Vault
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-100 flex items-center justify-center px-4 py-12">
+      <div className="max-w-md w-full space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+            Create your account
+          </h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Join us and start managing your files
+          </p>
+        </div>
 
-        {/* Success message */}
-        {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded mb-4 text-sm text-center">
-            {success}
-          </div>
-        )}
-
-        {/* Error message */}
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4 text-sm text-center">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          {/* Name */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-1">
-              Full Name
-            </label>
-            <div className="relative">
-              <FaUser className="absolute left-3 top-3 text-gray-400" />
-              <input
-                type="text"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                required
-              />
+        {/* Form */}
+        <form className="mt-8 space-y-6 bg-white p-8 rounded-xl shadow-lg" onSubmit={handleSubmit}>
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+              {error}
             </div>
-          </div>
+          )}
 
-          {/* Email */}
-          <div className="mb-4">
-            <label className="block text-gray-700 font-medium mb-1">
-              Email Address
-            </label>
-            <div className="relative">
-              <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Password */}
-          <div className="mb-2">
-            <label className="block text-gray-700 font-medium mb-1">
-              Password
-            </label>
-            <div className="relative">
-              <FaLock className="absolute left-3 top-3 text-gray-400" />
-              <input
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  checkPasswordStrength(e.target.value);
-                }}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                required
-              />
-            </div>
-
-            {/* Password strength indicator */}
-            {password && (
-              <div className="mt-2">
-                <div
-                  className={`h-2 rounded-full ${
-                    passwordStrength === "strong"
-                      ? "bg-green-500 w-full"
-                      : passwordStrength === "medium"
-                      ? "bg-yellow-400 w-2/3"
-                      : "bg-red-400 w-1/3"
-                  } transition-all duration-300`}
-                ></div>
-                <p
-                  className={`text-xs mt-1 ${
-                    passwordStrength === "strong"
-                      ? "text-green-600"
-                      : passwordStrength === "medium"
-                      ? "text-yellow-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {passwordStrength === "strong"
-                    ? "Strong password"
-                    : passwordStrength === "medium"
-                    ? "Medium strength"
-                    : "Weak password"}
-                </p>
+          <div className="space-y-4">
+            {/* Username Field */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Username
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaUser className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200"
+                  placeholder="Choose a username"
+                />
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Confirm Password */}
-          <div className="mb-6 mt-3">
-            <label className="block text-gray-700 font-medium mb-1">
-              Confirm Password
-            </label>
-            <div className="relative">
-              <FaLock className="absolute left-3 top-3 text-gray-400" />
-              <input
-                type="password"
-                placeholder="Re-enter password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                required
-              />
+            {/* Email Field */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email address
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaEnvelope className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200"
+                  placeholder="Enter your email"
+                />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaLock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition duration-200"
+                  placeholder="Create a password"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+              </div>
+              
+              {/* Password Strength */}
+              {formData.password && passwordStrength && (
+                <div className="mt-2">
+                  <div className={`text-sm ${passwordStrength.color}`}>
+                    Password strength: {passwordStrength.strength}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Confirm Password Field */}
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaLock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  required
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`block w-full pl-10 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 transition duration-200 ${
+                    formData.confirmPassword && !passwordMatch
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                      : 'border-gray-300 focus:ring-green-500 focus:border-green-500'
+                  }`}
+                  placeholder="Confirm your password"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <FaEyeSlash className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  ) : (
+                    <FaEye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                  )}
+                </button>
+                
+                {/* Password Match Indicator */}
+                {formData.confirmPassword && (
+                  <div className="absolute inset-y-0 right-10 flex items-center">
+                    {passwordMatch ? (
+                      <FaCheck className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <FaTimes className="h-4 w-4 text-red-500" />
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* Password Match Error */}
+              {formData.confirmPassword && !passwordMatch && (
+                <div className="mt-1 text-sm text-red-600">
+                  Passwords do not match
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Submit button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2.5 rounded-lg hover:bg-blue-700 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center"
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <svg
-                  className="animate-spin h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  ></path>
-                </svg>
-                Creating Account...
-              </span>
-            ) : (
-              "Sign Up"
-            )}
-          </button>
+          {/* Submit Button */}
+          <div>
+            <button
+              type="submit"
+              disabled={loading || !passwordMatch}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
+            >
+              {loading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Creating account...
+                </div>
+              ) : (
+                'Create account'
+              )}
+            </button>
+          </div>
+
+          {/* Sign in link */}
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link to="/login" className="font-medium text-green-600 hover:text-green-500">
+                Sign in here
+              </Link>
+            </p>
+          </div>
         </form>
-
-        {/* Divider */}
-        <div className="my-6 border-t border-gray-200"></div>
-
-        {/* Already have account */}
-        <p className="text-center text-sm text-gray-600">
-          Already have an account?{" "}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Login here
-          </Link>
-        </p>
       </div>
-
-      {/* Footer */}
-      <p className="text-gray-500 text-sm mt-6">
-        © {new Date().getFullYear()} Personal File Vault. All rights reserved.
-      </p>
     </div>
   );
-}
+};
+
+export default Register;

@@ -86,7 +86,9 @@ export const getCollection = async (req, res) => {
                 createdAt: true,
                 updatedAt: true,
                 ownerId: true,
-                files: true,  // Add this!
+                files: {
+                    select: { id: true, fileName: true }
+                }
             },
         });
 
@@ -96,7 +98,7 @@ export const getCollection = async (req, res) => {
 
         const fileCount = collection.files?.length ?? 0;
 
-        res.status(200).json({ collection: { ...collection, files: undefined }, fileCount });
+        res.status(200).json({ collection: { ...collection }, fileCount });
     } catch (error) {
         console.error('Error fetching collection:', error);
         res.status(500).json({ message: 'Internal server error' });

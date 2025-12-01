@@ -79,26 +79,6 @@ export const getUserProfile = async (req, res) => {
                 email: true,
                 createdAt: true,
                 updatedAt: true,
-                // TODO : Remove this collections and files in response later
-                collections: {
-                    select:{
-                        id: true,
-                        collectionName: true,
-                        createdAt: true,
-                        updatedAt: true,
-                        files: true
-                    }
-                },
-                files : {
-                    select:{
-                        id: true,
-                        fileName: true,
-                        filePath: true,
-                        createdAt: true,
-                        updatedAt: true,
-                        collections: true
-                    }
-                }
             }
         });
 
