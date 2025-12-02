@@ -105,11 +105,11 @@ describe('Middleware Utils', () => {
 
   describe('cookieOptions', () => {
     test('should have correct cookie configuration', () => {
-      // Assert
+      // Assert - Updated to match production cookie settings
       expect(cookieOptions).toEqual({
         httpOnly: true,
-        secure: false, // NODE_ENV !== 'production' in test
-        sameSite: 'Lax',
+        secure: true, // Set to true for production cross-origin support
+        sameSite: 'none', // Set to 'none' for CloudFront to ElasticBeanstalk
         maxAge: 3600000 // 1 hour in milliseconds
       });
     });
