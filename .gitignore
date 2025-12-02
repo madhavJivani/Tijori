@@ -1,6 +1,10 @@
 pnpm-debug.log*
 lerna-debug.log*
 
+# AWS CONFIGURATIONS FOR DEPLOYMENT UNDER SERVER-DEPLOY
+server-deploy
+server-deploy/*
+
 node_modules
 dist
 dist-ssr
