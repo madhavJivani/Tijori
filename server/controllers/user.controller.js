@@ -99,7 +99,7 @@ export const logoutUser = (req, res) => {
         res.clearCookie('auth_token', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'Strict' : 'Lax',
+            sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
         });
 
         res.status(200).json({ message: 'Logout successful' });

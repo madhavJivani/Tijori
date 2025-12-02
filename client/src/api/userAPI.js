@@ -4,7 +4,9 @@ import { BACKEND_URL } from './api.js';
 // User registration
 export const registerUser = async (userData) => {
   try {
-    const response = await axios.post(`${BACKEND_URL}/api/users/register`, userData);
+    const response = await axios.post(`${BACKEND_URL}/api/users/register`, userData, {
+      withCredentials: true, // For cookies
+    });
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
